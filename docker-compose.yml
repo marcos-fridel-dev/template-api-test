@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  services.webapi:
+    image: ${DOCKER_REGISTRY-}services.webapi
+    build:
+      context: .
+      dockerfile: Services.Api/Dockerfile
