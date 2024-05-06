@@ -1,0 +1,76 @@
+version: '3.4'
+
+services:
+  services.webapi:
+    container_name: template-api
+    hostname: api
+    # networks:
+    #   - template-network
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+            
+      - Database__Server=template-sql
+      - Jwt__SigningKey=${Jwt__SigningKey}
+      - Redis__Server=template-cache
+      - Redis__Password=${Redis__Password}
+    env_file:
+      - .env
+      # - .env.override
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    networks:
+      - backend
+
+  db:
+    image: mcr.microsoft.com/azure-sql-edge:1.0.4
+    # image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: template-sql
+    hostname: db
+    # networks:
+    #   - template-network
+    restart: always
+    environment:
+      - MSSQL_SA_PASSWORD=${Database__Password}
+      - ACCEPT_EULA=YES
+    env_file:
+      - .env
+    ports:
+      - "1433:1433"
+    # volumes:
+    #   - sql-server-data:/var/opt/mssql/
+    #   - sqldata:/var/opt/sqlserver/data
+    #   - sqllog:/var/opt/sqlserver/log
+    #   - sqlbackup:/var/opt/sqlserver/backup
+    #   - /c/docker/shared:/usr/shared
+    networks:
+      - backend
+
+  cache:
+    image: redis/redis-stack-server:latest
+    container_name: template-cache
+    hostname: redis
+    restart: always
+    command: /bin/sh -c "redis-stack-server --requirepass ${REDIS_PASSWORD}"
+    env_file:
+      - .env
+    ports:
+      - "6379:6379"
+    volumes: 
+      - cache:/data
+    networks:
+      - backend
+      
+volumes:
+  cache:
+    driver: local 
+
+networks:
+  backend:
+    driver: bridge  
+  
